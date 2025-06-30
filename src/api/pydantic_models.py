@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 
+
 class CustomerInput(BaseModel):
     Amount: float
     Value: float
@@ -22,6 +23,7 @@ class CustomerInput(BaseModel):
     CurrencyCode_USD: Optional[int] = 0
     ProductCategory_Other: Optional[int] = 0
     ChannelId_Web: Optional[int] = 0
+
 
 class RiskPrediction(BaseModel):
     risk_probability: float
