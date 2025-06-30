@@ -6,7 +6,9 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder, FunctionTransfo
 from sklearn.impute import SimpleImputer
 from sklearn.compose import ColumnTransformer
 
+
 # --- 1. Custom Transformers ---
+
 
 class DateTimeFeatureExtractor(BaseEstimator, TransformerMixin):
     def __init__(self, datetime_col='TransactionStartTime'):
@@ -20,12 +22,17 @@ class DateTimeFeatureExtractor(BaseEstimator, TransformerMixin):
         if self.datetime_col not in X_transformed.columns:
             raise ValueError(f"Datetime column '{self.datetime_col}' not found.")
 
-        X_transformed[self.datetime_col] = pd.to_datetime(X_transformed[self.datetime_col], errors='coerce')
+        X_transformed[self.datetime_col] = pd.to_datetime(
+            X_transformed[self.datetime_col], errors='coerce'
+        )
         original_rows = X_transformed.shape[0]
         X_transformed.dropna(subset=[self.datetime_col], inplace=True)
 
         if X_transformed.shape[0] < original_rows:
-            print(f"Warning: Dropped {original_rows - X_transformed.shape[0]} rows due to invalid datetime.")
+            print(
+                f"Warning: Dropped {original_rows - X_transformed.shape[0]} "
+                f"rows due to invalid datetime."
+            )
 
         X_transformed['transaction_hour'] = X_transformed[self.datetime_col].dt.hour
         X_transformed['transaction_day_of_week'] = X_transformed[self.datetime_col].dt.dayofweek
@@ -102,11 +109,15 @@ class CustomWOEEncoder(BaseEstimator, TransformerMixin):
 
 # --- 2. Aggregation Function ---
 
+
 def create_aggregated_features(df, id_col='AccountId', aggregate_cols=['Amount', 'Value']):
     if id_col not in df.columns:
         raise ValueError(f"'{id_col}' not in DataFrame.")
 
-    valid_cols = [col for col in aggregate_cols if col in df.columns and pd.api.types.is_numeric_dtype(df[col])]
+    valid_cols = [
+        col for col in aggregate_cols
+        if col in df.columns and pd.api.types.is_numeric_dtype(df[col])
+    ]
     if not valid_cols:
         return df
 
@@ -117,11 +128,16 @@ def create_aggregated_features(df, id_col='AccountId', aggregate_cols=['Amount',
     agg_dict = {k: v for k, v in agg_dict.items() if k in valid_cols}
 
     agg_df = df.groupby(id_col).agg(agg_dict)
-    agg_df.columns = [f'{col}_{func}_{id_col.lower()}' for col, func in agg_df.columns]
+    agg_df.columns = [
+        f'{col}_{func}_{id_col.lower()}' for col, func in agg_df.columns
+    ]
     agg_df = agg_df.reset_index()
 
     if 'Amount' in valid_cols:
-        agg_df.rename(columns={f'Amount_count_{id_col.lower()}': f'transaction_count_{id_col.lower()}'}, inplace=True)
+        agg_df.rename(
+            columns={f'Amount_count_{id_col.lower()}': f'transaction_count_{id_col.lower()}'},
+            inplace=True
+        )
 
     df = pd.merge(df, agg_df, on=id_col, how='left')
     for col in [f'amount_std_{id_col.lower()}', f'value_std_{id_col.lower()}']:
@@ -132,6 +148,7 @@ def create_aggregated_features(df, id_col='AccountId', aggregate_cols=['Amount',
 
 
 # --- 3. Preprocessing Pipeline ---
+
 
 def get_preprocessing_pipeline(numerical_features, categorical_ohe_features, categorical_woe_features):
     num_pipe = Pipeline([
@@ -146,7 +163,8 @@ def get_preprocessing_pipeline(numerical_features, categorical_ohe_features, cat
 
     woe_pipe = Pipeline([
         ('imputer', SimpleImputer(strategy='most_frequent')),
-        ('to_df', FunctionTransformer(lambda X: pd.DataFrame(X, columns=categorical_woe_features), validate=False)),
+        ('to_df', FunctionTransformer(
+            lambda X: pd.DataFrame(X, columns=categorical_woe_features), validate=False)),
         ('woe_encoder', CustomWOEEncoder(variables=categorical_woe_features))
     ])
 
@@ -168,7 +186,9 @@ def run_preprocessing(df_raw, target_column='FraudResult'):
     X = datetime_extractor.fit_transform(X)
     y = y.loc[X.index]
 
-    X = create_aggregated_features(X, id_col='AccountId', aggregate_cols=['Amount', 'Value'])
+    X = create_aggregated_features(
+        X, id_col='AccountId', aggregate_cols=['Amount', 'Value']
+    )
     y = y.loc[X.index]
 
     categorical_ohe_features = ['CurrencyCode']
@@ -187,12 +207,16 @@ def run_preprocessing(df_raw, target_column='FraudResult'):
     categorical_ohe_features = [col for col in categorical_ohe_features if col in all_columns]
     categorical_woe_features = [col for col in categorical_woe_features if col in all_columns]
 
-    drop_cols = ['TransactionId', 'BatchId', 'AccountId', 'SubscriptionId',
-                 'CustomerId', 'ProviderId', 'ProductId']
+    drop_cols = [
+        'TransactionId', 'BatchId', 'AccountId', 'SubscriptionId',
+        'CustomerId', 'ProviderId', 'ProductId'
+    ]
     drop_cols = [col for col in drop_cols if col in X.columns]
     X = X.drop(columns=drop_cols)
 
-    pipeline = get_preprocessing_pipeline(numerical_features, categorical_ohe_features, categorical_woe_features)
+    pipeline = get_preprocessing_pipeline(
+        numerical_features, categorical_ohe_features, categorical_woe_features
+    )
     X_array = pipeline.fit_transform(X, y)
 
     try:
@@ -207,6 +231,7 @@ def run_preprocessing(df_raw, target_column='FraudResult'):
 
 
 # --- 4. Example Usage ---
+
 
 if __name__ == '__main__':
     print("Testing preprocessing pipeline...")
@@ -226,7 +251,8 @@ if __name__ == '__main__':
         'ChannelId': np.random.choice(['Web', 'Android', 'IOS', 'Pay Later'], n_rows),
         'Amount': np.random.uniform(-10000, 50000, n_rows),
         'Value': np.random.uniform(0, 50000, n_rows),
-        'TransactionStartTime': pd.to_datetime('2024-01-01') + pd.to_timedelta(np.random.randint(0, 365*24*60*60, n_rows), unit='s'),
+        'TransactionStartTime': pd.to_datetime('2024-01-01') +
+            pd.to_timedelta(np.random.randint(0, 365 * 24 * 60 * 60, n_rows), unit='s'),
         'PricingStrategy': np.random.choice([1, 2, 3, 4, 5], n_rows),
         'FraudResult': np.random.choice([0, 1], n_rows, p=[0.95, 0.05])
     })
@@ -235,6 +261,6 @@ if __name__ == '__main__':
 
     print("\nProcessed Features:")
     print(X_processed.head())
+
     print("\nTarget:")
     print(y_processed.head())
-    
