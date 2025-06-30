@@ -1,19 +1,32 @@
-name: Basic CI
+name: CI Pipeline
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.x"
+          python-version: 3.12
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Run linter (flake8)
+        run: |
+          pip install flake8
+          flake8 src tests
+
       - name: Run tests
-        run: python --version
+        run: |
+          pip install pytest
+          pytest tests/
