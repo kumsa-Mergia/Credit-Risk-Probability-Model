@@ -10,7 +10,7 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
     f1_score,
-    roc_auc_score
+    roc_auc_score,
 )
 
 # Import schema definitions
@@ -22,26 +22,31 @@ def main():
     data = pd.read_csv("../../data/raw/data.csv")
 
     columns_to_drop = [
-        'TransactionId', 'BatchId', 'AccountId', 'SubscriptionId',
-        'CustomerId', 'ProviderId', 'ProductId', 'ChannelId',
-        'TransactionStartTime',
-        'FraudResult'
+        "TransactionId",
+        "BatchId",
+        "AccountId",
+        "SubscriptionId",
+        "CustomerId",
+        "ProviderId",
+        "ProductId",
+        "ChannelId",
+        "TransactionStartTime",
+        "FraudResult",
     ]
 
-    X = data.drop(columns=columns_to_drop, errors='ignore')
-    y = data['FraudResult']
+    X = data.drop(columns=columns_to_drop, errors="ignore")
+    y = data["FraudResult"]
 
     # Handle categorical features in X
-    for col in X.select_dtypes(include=['object']).columns:
-        X = pd.concat(
-            [X, pd.get_dummies(X[col], prefix=col, drop_first=True)],
-            axis=1
-        )
+    for col in X.select_dtypes(include=["object"]).columns:
+        X = pd.concat([X, pd.get_dummies(X[col], prefix=col, drop_first=True)], axis=1)
         X = X.drop(columns=[col])
 
     # Convert all to float64 and impute NaNs
     for col in X.columns:
-        X[col] = pd.to_numeric(X[col], errors='coerce').astype(np.float64)  # Force float64
+        X[col] = pd.to_numeric(X[col], errors="coerce").astype(
+            np.float64
+        )  # Force float64
 
     X = X.fillna(0)  # Impute NaNs
 
@@ -51,7 +56,7 @@ def main():
 
     models = {
         "LogisticRegression": LogisticRegression(max_iter=1000),
-        "RandomForest": RandomForestClassifier()
+        "RandomForest": RandomForestClassifier(),
     }
 
     mlflow.set_experiment("Credit Risk Modeling")
@@ -91,12 +96,10 @@ def main():
                 model,
                 name="model",
                 input_example=X_train.head(5),
-                signature=signature  # Pass the explicit signature here
+                signature=signature,  # Pass the explicit signature here
             )
 
-            print(
-                f"{name} - Accuracy: {acc:.4f}, F1: {f1:.4f}, ROC-AUC: {roc_auc:.4f}"
-            )
+            print(f"{name} - Accuracy: {acc:.4f}, F1: {f1:.4f}, ROC-AUC: {roc_auc:.4f}")
 
 
 if __name__ == "__main__":
