@@ -304,7 +304,12 @@ if __name__ == "__main__":
             ),
             "Amount": np.random.uniform(-10000, 50000, n_rows),
             "Value": np.random.uniform(0, 50000, n_rows),
-            "TransactionStartTime": pd.to_datetime("2024-01-01") + pd.to_timedelta(np.random.randint(0, 365 * 24 * 60 * 60, n_rows), unit="s" ),
+            "TransactionStartTime": (
+                pd.to_datetime("2024-01-01")
+                + pd.to_timedelta(
+                    np.random.randint(0, 365 * 24 * 60 * 60, n_rows), unit="s"
+                )
+            ),
             "PricingStrategy": np.random.choice([1, 2, 3, 4, 5], n_rows),
             "FraudResult": np.random.choice([0, 1], n_rows, p=[0.95, 0.05]),
         }
